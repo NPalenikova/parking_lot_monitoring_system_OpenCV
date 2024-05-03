@@ -13,14 +13,14 @@ except:
 width, height = 27, 15
 
 
-def click_event(event, x, y ,flags, params):
+def click_event(event, x, y, flags, params):
     if event == cv2.EVENT_LBUTTONDOWN:
         pos_list.append((x, y))
 
     if event == cv2.EVENT_RBUTTONDOWN:
         for i, pos in enumerate(pos_list):
             x1, y1 = pos
-            if x1 < x < x1+ width and y1 < y < y1 + height:
+            if x1 < x < x1 + width and y1 < y < y1 + height:
                 pos_list.pop(i)
 
     with open('car_park_pos', 'wb') as f:
