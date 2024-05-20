@@ -3,3 +3,4 @@ opencv-python==4.8.1.78
 pickle-mixin==1.0.2
 pip==23.2.1
 pyserial==3.5
+matplotlib==3.9.0
