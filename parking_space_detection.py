@@ -37,13 +37,12 @@ while True:
             box = cv2.boxPoints(rect)
             box = np.int64(box)
             cv2.drawContours(dilated, [box], 0, (255, 255, 255), 20)
-            # cv2.drawContours(frame, [box], 0, (255, 255, 255), 20)
 
     contours, hierarchy = cv2.findContours(dilated, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
     # Filter to get only inner contours
     inner_contours = [contours[i] for i in range(len(contours)) if hierarchy[0][i][3] != -1]
 
-    # Draw minimum enclosing rectangles around each segmented parking space
+    # Draw bounding rectangles around each segmented parking space
     for i, contour in enumerate(inner_contours):
         area = cv2.contourArea(contour)
         if 1000 < area < 7000:

@@ -38,7 +38,6 @@ while True:
             box = cv2.boxPoints(rect)
             box = np.int64(box)
             cv2.drawContours(dilated, [box], 0, (255, 255, 255), 20)
-            cv2.drawContours(frame, [box], 0, (255, 255, 255), 20)
 
     contours, hierarchy = cv2.findContours(dilated, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
     # Filter to get only inner contours
