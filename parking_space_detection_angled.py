@@ -8,6 +8,7 @@ cap = cv2.VideoCapture(1)
 write_flag = False
 saved_spaces = []
 
+
 while True:
     # Read frame from the camera
     ret, frame = cap.read()
@@ -37,7 +38,7 @@ while True:
             box = cv2.boxPoints(rect)
             box = np.int64(box)
             cv2.drawContours(dilated, [box], 0, (255, 255, 255), 20)
-            # cv2.drawContours(frame, [box], 0, (255, 255, 255), 20)
+            cv2.drawContours(frame, [box], 0, (255, 255, 255), 20)
 
     contours, hierarchy = cv2.findContours(dilated, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
     # Filter to get only inner contours
@@ -47,9 +48,10 @@ while True:
     for i, contour in enumerate(inner_contours):
         area = cv2.contourArea(contour)
         if 1000 < area < 7000:
-            x, y, w, h = cv2.boundingRect(contour)
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            parking_spaces.append(((x, y), (x + w, y + h)))
+            rect = cv2.minAreaRect(contour)
+            box = cv2.boxPoints(rect)
+            box = np.int64(box)
+            cv2.drawContours(frame, [box], 0, (0, 255, 0), 2)
 
     if write_flag:
         saved_spaces = parking_spaces
@@ -66,7 +68,7 @@ while True:
 
     if (key == ord('q')) or (cv2.getWindowProperty('Parking Space Detection', cv2.WND_PROP_VISIBLE) < 1):
         with open('pos', 'wb') as f:
-            pickle.dump(saved_spaces, f)
+            pickle.dump(parking_spaces, f)
         break
 
 # Release the capture

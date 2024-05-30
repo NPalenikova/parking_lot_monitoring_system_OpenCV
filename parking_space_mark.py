@@ -9,7 +9,6 @@ end_x, end_y = -1, -1
 try:
     with open('pos', 'rb') as f:
         spaces = pickle.load(f)
-
 except FileNotFoundError:
     spaces = []
 
@@ -43,8 +42,8 @@ def mouse_callback(event, x, y, flags, param):
 cap = cv2.VideoCapture(1)
 
 # Create a window and bind the mouse callback function
-cv2.namedWindow("Camera Stream")
-cv2.setMouseCallback("Camera Stream", mouse_callback)
+cv2.namedWindow("Mark parking spaces")
+cv2.setMouseCallback("Mark parking spaces", mouse_callback)
 
 # Main loop
 while True:
@@ -52,22 +51,20 @@ while True:
     if not ret:
         break
 
-    # frame = cv2.imread("busy_lot.png")
-
     # Draw existing rectangles
-    for rect in spaces:
-        cv2.rectangle(frame, rect[0], rect[1], (0, 255, 0), 2)
+    for r in spaces:
+        cv2.rectangle(frame, r[0], r[1], (0, 255, 0), 2)
 
     # Draw the rectangle if left mouse button is pressed
     if drawing:
         cv2.rectangle(frame, (start_x, start_y), (end_x, end_y), (0, 255, 0), 2)
 
     # Display the frame
-    cv2.imshow("Camera Stream", frame)
-    cv2.setMouseCallback('Camera Stream', mouse_callback)
+    cv2.imshow("Mark parking spaces", frame)
+    cv2.setMouseCallback('Mark parking spaces', mouse_callback)
 
     # Check for key press and break the loop if 'q' is pressed
-    if (cv2.waitKey(1) & 0xFF == ord('q')) or (cv2.getWindowProperty('Camera Stream', cv2.WND_PROP_VISIBLE) < 1):
+    if (cv2.waitKey(1) & 0xFF == ord('q')) or (cv2.getWindowProperty('Mark parking spaces', cv2.WND_PROP_VISIBLE) < 1):
         with open('pos', 'wb') as f:
             pickle.dump(spaces, f)
         break

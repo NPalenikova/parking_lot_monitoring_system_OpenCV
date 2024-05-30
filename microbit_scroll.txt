@@ -12,7 +12,6 @@ while True:
             received_number = int(data)
             if received_number != number:
                 number = received_number
-                display.show(str(number))  # Display the new data
         except ValueError:
             display.show(Image('90009:'
                                '09090:'
@@ -30,6 +29,5 @@ while True:
                            '00000:'
                            '90909'))
 
-    # Only display the number if it's not None
     if number is not None:
-        display.show(str(number))
+        display.scroll(str(number))

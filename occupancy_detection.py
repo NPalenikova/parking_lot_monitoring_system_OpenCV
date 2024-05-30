@@ -6,18 +6,15 @@ import time
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from datetime import datetime
+import csv
 
 # Loading list of parking space coordinates from a pickle file
 with open('pos', 'rb') as f:
     pos_list = pickle.load(f)
 
-# Open a file in append mode for writing free space information
-# with open('free_spaces_log.txt', 'a') as log_file:
-#     log_file.write("Free Spaces\n")
-
 # Serial communication setup
-# SERIAL_PORT = "COM7"
-# ser = serial.Serial(SERIAL_PORT, 115200, timeout=1)
+SERIAL_PORT = "COM7"
+ser = serial.Serial(SERIAL_PORT, 115200, timeout=1)
 
 
 # Callback function for the trackbar
@@ -54,20 +51,14 @@ def check_parking_space(img):
         cv2.putText(frame, f"{count_non_zero}/{total}", (x1, y2 - 5), cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.5, color, 1)
 
     current_time = time.time()
-    # Sending free_spaces data through UART and appending to the list every 5 seconds
-    if current_time - check_parking_space.last_send_time >= 5:
-        # ser.write(f"{free_spaces}".encode())
-        # with open('free_spaces_log.txt', 'a') as log:
-        #     log.write(f"{free_spaces}\n")
+    # Sending free_spaces data through UART and appending to the list every 3 seconds
+    if current_time - check_parking_space.last_send_time >= 3:
+        ser.write(f"{free_spaces}".encode())
         check_parking_space.last_send_time = current_time
-        # Append the current time and number of free spaces to the occupancy data list
         occupancy_data.append((current_time, free_spaces))
 
     # Displaying the total number of free parking spaces out of the total number of parking spaces
-    cv2.putText(frame, f'{free_spaces} / {len(pos_list)}', (100, 100), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 255), 3)
-
-    # Displaying the percentage threshold value
-    cv2.putText(frame, f'{percentage * 100:.0f}%', (100, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+    cv2.putText(frame, f'{free_spaces} / {len(pos_list)}', (10, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 255), 2)
 
 
 check_parking_space.last_send_time = time.time()
@@ -87,10 +78,10 @@ out = cv2.VideoWriter('output.mp4', fourcc, fps, (frame_width, frame_height))
 percentage = 30 / 100.0  # 30%
 
 # Create a window
-cv2.namedWindow('Parking Monitoring')
+cv2.namedWindow('Occupancy detection')
 
 # Create a trackbar for the percentage threshold
-cv2.createTrackbar('Threshold: ', 'Parking Monitoring', int(percentage * 100), 100, on_trackbar)
+cv2.createTrackbar('Hranica', 'Occupancy detection', int(percentage * 100), 100, on_trackbar)
 
 # Initialize the list to store occupancy data
 occupancy_data = []
@@ -106,8 +97,7 @@ while 1:
     blurred_frame = cv2.GaussianBlur(gray_frame, (3, 3), 1)
 
     # Applying adaptive thresholding to the blurred frame to binarize it
-    threshold_frame = cv2.adaptiveThreshold(blurred_frame, 255,
-                                            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+    threshold_frame = cv2.adaptiveThreshold(blurred_frame, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                             cv2.THRESH_BINARY_INV, 25, 16)
 
     # Applying median filtering to the thresholded frame to remove noise
@@ -120,12 +110,12 @@ while 1:
     check_parking_space(dilated_frame)
 
     # Displaying the frame
-    cv2.imshow('Parking Monitoring', frame)
+    cv2.imshow('Occupancy detection', frame)
 
     if cv2.waitKey(20) & 0xFF == ord("q"):
         break
 
-    if cv2.getWindowProperty('Parking Monitoring', cv2.WND_PROP_VISIBLE) < 1:
+    if cv2.getWindowProperty('Occupancy detection', cv2.WND_PROP_VISIBLE) < 1:
         break
 
 cap.release()
@@ -138,14 +128,15 @@ times = [datetime.fromtimestamp(t) for t in times]  # Convert timestamps to date
 
 # Generate the filename based on the date and time of the first occupancy data point
 start_time = times[0]
-filename = f"occupancy_{start_time.strftime('%Y%m%d_%H%M%S')}.png"
+filename_png = f"occupancy_{start_time.strftime('%Y%m%d_%H%M%S')}.png"
+filename_csv = f"occupancy_{start_time.strftime('%Y%m%d_%H%M%S')}.csv"
 
 # Plot the occupancy data
 plt.figure(figsize=(10, 5))
-plt.plot(times, free_spaces, label='Free Spaces')
-plt.xlabel('Time')
-plt.ylabel('Number of Free Spaces')
-plt.title('Parking Space Occupancy Over Time')
+plt.plot(times, free_spaces, label='Voľné parkovacie miesta')
+plt.xlabel('Čas')
+plt.ylabel('Počet voľných miest')
+plt.title('Obsadenosť parkovacích miest za čas')
 plt.legend()
 plt.grid(True)
 
@@ -157,13 +148,20 @@ plt.gca().xaxis.set_major_locator(mdates.AutoDateLocator())
 plt.gcf().autofmt_xdate()
 
 # Add the date to the corner of the graph
-plt.text(0.95, 0.01, start_time.strftime('%Y-%m-%d %H:%M:%S'),
-         verticalalignment='bottom', horizontalalignment='right',
+plt.text(0.95, 0.99, start_time.strftime('%Y-%m-%d %H:%M:%S'),
+         verticalalignment='top', horizontalalignment='right',
          transform=plt.gca().transAxes,
          color='gray', fontsize=10)
 
 # Save the plot as an image with the generated filename
-plt.savefig(filename)
+plt.savefig(filename_png)
 
 # Show the plot
 plt.show()
+
+# Save the occupancy data to a CSV file
+with open(filename_csv, 'w', newline='') as csvfile:
+    csvwriter = csv.writer(csvfile)
+    csvwriter.writerow(['Timestamp', 'Free Spaces'])
+    for t, free_space in occupancy_data:
+        csvwriter.writerow([datetime.fromtimestamp(t).strftime('%Y-%m-%d %H:%M:%S'), free_space])
